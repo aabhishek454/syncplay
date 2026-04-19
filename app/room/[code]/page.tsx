@@ -16,6 +16,7 @@ import TrackQueue from '@/components/TrackQueue';
 import PlayerBar from '@/components/PlayerBar';
 import SyncToast from '@/components/SyncToast';
 import YoutubePlayer from '@/components/YoutubePlayer';
+import AudioUnlockOverlay from '@/components/AudioUnlockOverlay';
 
 export default function RoomPage() {
   const router = useRouter();
@@ -113,6 +114,7 @@ export default function RoomPage() {
       <PlayerBar />
       <SyncToast />
       <YoutubePlayer />
+      <AudioUnlockOverlay />
 
     </div>
   );

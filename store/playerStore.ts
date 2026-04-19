@@ -19,6 +19,7 @@ type PlayerState = {
   networkOffset: number; // local + offset = hostTime
   isResyncing: boolean;
   partnerOnline: boolean;
+  audioUnlocked: boolean;
   toasts: ToastMessage[];
   
   setRoomCode: (code: string) => void;
@@ -31,6 +32,7 @@ type PlayerState = {
   setNetworkOffset: (offset: number) => void;
   setResyncing: (resync: boolean) => void;
   setPartnerOnline: (online: boolean) => void;
+  setAudioUnlocked: (unlocked: boolean) => void;
   addToast: (msg: string) => void;
   removeToast: (id: string) => void;
 };
@@ -46,10 +48,13 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   networkOffset: 0,
   isResyncing: false,
   partnerOnline: false,
+  audioUnlocked: false,
   toasts: [],
   
   setRoomCode: (code) => set({ roomCode: code }),
-  setIdentity: (identity) => set({ identity }),
+  setIdentity: (identity) => {
+     set({ identity, audioUnlocked: identity === 'host' }); // Host unlocks automatically
+  },
   setTrack: (track) => set({ track }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setProgress: (progress) => set({ progress }),
@@ -58,6 +63,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setNetworkOffset: (offset) => set({ networkOffset: offset }),
   setResyncing: (resyncing) => set({ isResyncing: resyncing }),
   setPartnerOnline: (partnerOnline) => set({ partnerOnline }),
+  setAudioUnlocked: (audioUnlocked) => set({ audioUnlocked }),
   
   addToast: (msg) => {
     const id = Math.random().toString(36).substring(7);

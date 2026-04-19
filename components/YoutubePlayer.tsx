@@ -11,7 +11,14 @@ export default function YoutubePlayer() {
     if (!playerRef.current || !track) return;
 
     // Load the video if it changed
-    playerRef.current.loadVideoById(track.id);
+    if (typeof playerRef.current.loadVideoById === 'function') {
+        playerRef.current.loadVideoById(track.id);
+        setTimeout(() => {
+           if (usePlayerStore.getState().isPlaying && typeof playerRef.current.playVideo === 'function') {
+               playerRef.current.playVideo();
+           }
+        }, 300);
+    }
   }, [track?.id]);
 
   const isSeekingLock = useRef(false);
@@ -40,6 +47,18 @@ export default function YoutubePlayer() {
       console.error("YT Player Error:", e);
     }
   }, [isPlaying, progress, volume]); // track.id omitted intentionally
+
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
+         if (usePlayerStore.getState().isPlaying) {
+             playerRef.current.playVideo();
+         }
+      }
+    };
+    document.addEventListener("click", handleGlobalClick, { once: true });
+    return () => document.removeEventListener("click", handleGlobalClick);
+  }, []);
 
   const onReady: YouTubeProps['onReady'] = (e) => {
     playerRef.current = e.target;
