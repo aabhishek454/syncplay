@@ -78,7 +78,15 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   
   setRoomCode: (code) => set({ roomCode: code }),
   setIdentity: (identity) => set({ identity, audioUnlocked: identity === 'host' }),
-  setUser: (user) => set({ user, isAuthenticated: !!user }),
+  setUser: (user) => {
+    const identity = user === 'abhishek' ? 'host' : 'guest';
+    set({ 
+      user, 
+      isAuthenticated: !!user, 
+      identity, 
+      audioUnlocked: identity === 'host' 
+    });
+  },
   setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   setControlMode: (controlMode) => set({ controlMode }),
   setTrack: (track) => set({ track }),
