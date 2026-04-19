@@ -74,7 +74,8 @@ export async function initRoomSync(roomCode: string) {
       store.addToast("Radhika is here! Listening together. 💝");
     });
   } else {
-    peerInstance = new PeerJS(undefined, peerConfig);
+    // Correctly initialize with random ID + config to satisfy TypeScript
+    peerInstance = new PeerJS(peerConfig as any);
     peerInstance.on('open', (id: string) => {
       console.log("[PeerJS] Guest ID created:", id);
       const conn = peerInstance.connect(hostId, {
