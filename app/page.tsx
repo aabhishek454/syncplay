@@ -20,18 +20,6 @@ export default function LandingPage() {
   const createRoom = async () => {
     setLoading(true);
     const code = generateCode();
-    try {
-      await supabase.from('rooms').insert({
-        code,
-        track_id: 'fHI8X4OXluQ', // Default to Blinding Lights
-        track_title: 'Blinding Lights',
-        track_artist: 'The Weeknd',
-        is_playing: false,
-        position: 0,
-      });
-    } catch (e) {
-      console.error(e);
-    }
     
     // Set identity as host
     localStorage.setItem(`syncplay_identity_${code}`, 'host');
@@ -45,12 +33,6 @@ export default function LandingPage() {
     if (!code) return;
     
     setLoading(true);
-    try {
-      // Just check if it's there
-      await supabase.from('rooms').select('code').eq('code', code).single();
-    } catch (e) {
-      console.error(e);
-    }
 
     localStorage.setItem(`syncplay_identity_${code}`, 'guest');
     router.push(`/room/${code}`);

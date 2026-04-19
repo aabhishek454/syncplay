@@ -36,21 +36,7 @@ export default function RoomPage() {
 
     setRoomCode(code);
 
-    // Initial state fetch
-    const fetchState = async () => {
-      try {
-        const { data, error } = await supabase.from('rooms').select('*').eq('code', code).single();
-        if (data) {
-          const track = TRACK_LIST.find(t => t.id === data.track_id) || null;
-          setTrack(track);
-          setInProgressElapsed(data.position, data.updated_at, data.is_playing);
-        }
-      } catch (e) {
-        console.error('Fetch err', e);
-      }
-    };
-    fetchState();
-
+    // Using PeerJS now, we fetch state from host via requestSync event sent inside roomSync.ts open handler.
     const { unsubscribe } = initRoomSync(code);
 
     return () => {
