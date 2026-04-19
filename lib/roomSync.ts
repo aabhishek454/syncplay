@@ -23,7 +23,8 @@ export type SyncPayload =
   | { type: 'syncState'; trackId: string; isPlaying: boolean; position: number; trackMetadata?: Track }
   | { type: 'modeChange'; mode: 'HOST' | 'SHARED' }
   | { type: 'ping'; tempTs: number }
-  | { type: 'pong'; tempTs: number; hostTs: number; hostReceiptTs: number };
+  | { type: 'pong'; tempTs: number; hostTs: number; hostReceiptTs: number }
+  | { type: 'chat'; text: string; sender: string };
 
 export type SyncEvent = {
   v: number;

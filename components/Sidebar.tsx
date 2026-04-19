@@ -1,57 +1,93 @@
 'use client';
-import { FaHome, FaGlobe, FaMusic, FaHeart } from 'react-icons/fa';
+import { FaHome, FaGlobe, FaMusic, FaHeart, FaStar } from 'react-icons/fa';
 import { usePlayerStore } from '@/store/playerStore';
 
 export default function Sidebar() {
-  const { currentView, setCurrentView } = usePlayerStore();
+  const { currentView, setCurrentView, setSearchQuery } = usePlayerStore();
 
-  const handleViewChange = (view: 'HOME' | 'EXPLORE' | 'LIBRARY' | 'LIKED') => {
-    console.log(`[NAV] Switching View to: ${view}`);
-    setCurrentView(view);
+  const handlePlaylistClick = (name: string, query: string) => {
+    console.log(`[PLAYLIST] Searching for: ${query}`);
+    setSearchQuery(query);
+    setCurrentView('EXPLORE'); // Switch to search/explore view to show results
   };
 
   return (
-    <div className="w-[220px] bg-[#0a0510]/60 backdrop-blur-md border-r border-[#1a1a1a] flex flex-col pt-3 pb-8 shrink-0 overflow-y-auto hidden md:flex relative z-30 pointer-events-auto">
+    <div className="w-[260px] glass-panel border-r border-white/5 flex flex-col pt-6 pb-8 shrink-0 overflow-y-auto hidden md:flex relative z-30 group/sidebar">
       
+      {/* Brand/User Logo Area */}
+      <div className="px-6 mb-8">
+        <h1 className="text-xl font-black italic bg-gradient-to-r from-white to-pink-400 bg-clip-text text-transparent flex items-center gap-2">
+          Sync<span className="text-pink-500">Love</span> <FaHeart className="text-xs animate-pulse text-pink-500" />
+        </h1>
+      </div>
+
       {/* Primary Nav */}
-      <div className="flex flex-col px-3 gap-1">
+      <div className="flex flex-col px-4 gap-1">
         <NavItem 
            icon={<FaHome />} 
-           label="Home" 
+           label="Lounge" 
            active={currentView === 'HOME'} 
-           onClick={() => handleViewChange('HOME')} 
+           onClick={() => setCurrentView('HOME')} 
         />
         <NavItem 
            icon={<FaGlobe />} 
-           label="Explore" 
+           label="Discover" 
            active={currentView === 'EXPLORE'} 
-           onClick={() => handleViewChange('EXPLORE')} 
+           onClick={() => setCurrentView('EXPLORE')} 
         />
         <NavItem 
            icon={<FaMusic />} 
-           label="Library" 
+           label="Our Library" 
            active={currentView === 'LIBRARY'} 
-           onClick={() => handleViewChange('LIBRARY')} 
+           onClick={() => setCurrentView('LIBRARY')} 
         />
         <NavItem 
-           icon={<FaHeart />} 
-           label="Liked" 
+           icon={<FaStar />} 
+           label="Favorites" 
            active={currentView === 'LIKED'} 
-           onClick={() => handleViewChange('LIKED')} 
+           onClick={() => setCurrentView('LIKED')} 
         />
       </div>
 
-      <div className="mx-6 my-4 border-t border-[#1a1a1a]"></div>
+      <div className="mx-6 my-6 border-t border-white/5"></div>
 
       {/* Playlists */}
-      <div className="flex flex-col px-3">
-        <span className="text-[12px] text-gray-400 font-semibold mb-2 px-3">PLAYLISTS</span>
+      <div className="flex flex-col px-4 space-y-1">
+        <span className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-3 px-3">Curated for Us</span>
         
-        <Playlist thumbColor="bg-pink-500" name="For Radhika" count="SyncPlay Special" />
-        <Playlist thumbColor="bg-blue-500" name="Late Night Vibes" count="124 songs" />
-        <Playlist thumbColor="bg-purple-600" name="Top 100 Hip Hop" count="100 songs" />
+        <Playlist 
+          icon={<FaHeart className="text-pink-400" />} 
+          name="For Radhika 💖" 
+          description="Romantic Specials"
+          onClick={() => handlePlaylistClick("For Radhika", "romantic love songs for wife")}
+        />
+        <Playlist 
+          icon={<FaStar className="text-yellow-400" />} 
+          name="Abhishek's Picks" 
+          description="Lofi & Beats"
+          onClick={() => handlePlaylistClick("Abhishek's Picks", "lofi hip hop radio study sleep")}
+        />
+        <Playlist 
+          icon={<FaMusic className="text-purple-400" />} 
+          name="Our Roadtrip" 
+          description="Bollywood Hits"
+          onClick={() => handlePlaylistClick("Our Roadtrip", "bollywood romantic road trip songs")}
+        />
+        <Playlist 
+          icon={<FaGlobe className="text-blue-400" />} 
+          name="Late Night" 
+          description="Mellow Vibes"
+          onClick={() => handlePlaylistClick("Late Night", "late night mellow mood songs")}
+        />
       </div>
 
+      {/* Bottom Status */}
+      <div className="mt-auto px-6 pt-4">
+        <div className="p-3 bg-white/5 rounded-2xl border border-white/5 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-pink-500 animate-ping"></div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Sync Active</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -60,11 +96,13 @@ function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, labe
   return (
     <div 
       onClick={onClick}
-      className={`flex items-center gap-4 py-3 px-3 rounded-xl cursor-pointer transition-all group ${
-        active ? 'bg-white/10 text-white shadow-lg' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+      className={`flex items-center gap-4 py-3 px-4 rounded-2xl cursor-pointer transition-all duration-300 group ${
+        active 
+          ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(255,255,255,0.05)] border border-white/10' 
+          : 'text-white/40 hover:bg-white/5 hover:text-white/80'
       }`}
     >
-       <div className={`text-xl transition-transform group-hover:scale-110 ${active ? 'text-purple-400' : 'group-hover:text-pink-400'}`}>
+       <div className={`text-lg transition-transform duration-500 group-hover:scale-110 ${active ? 'text-pink-500' : 'group-hover:text-pink-400'}`}>
           {icon}
        </div>
        <span className={`text-sm tracking-tight ${active ? 'font-bold' : 'font-medium'}`}>{label}</span>
@@ -72,15 +110,18 @@ function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode, labe
   );
 }
 
-function Playlist({ thumbColor, name, count }: { thumbColor: string, name: string, count: string }) {
+function Playlist({ icon, name, description, onClick }: { icon: React.ReactNode, name: string, description: string, onClick: () => void }) {
   return (
-    <div className="flex items-center gap-3 py-2 px-3 hover:bg-white/5 rounded-xl cursor-pointer group">
-       <div className={`w-8 h-8 rounded shrink-0 flex items-center justify-center ${thumbColor} shadow-md`}>
-          <FaMusic className="text-white/80 text-xs" />
+    <div 
+      onClick={onClick}
+      className="flex items-center gap-3 py-2 px-3 hover:bg-white/5 rounded-2xl cursor-pointer group transition-all"
+    >
+       <div className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center bg-white/5 border border-white/5 shadow-inner transition-transform group-hover:scale-105">
+          {icon}
        </div>
        <div className="flex flex-col truncate">
-          <span className="text-sm font-medium text-white truncate">{name}</span>
-          <span className="text-[11px] text-gray-400 truncate">{count}</span>
+          <span className="text-sm font-bold text-white/90 truncate group-hover:text-white">{name}</span>
+          <span className="text-[10px] text-white/30 truncate uppercase tracking-tighter">{description}</span>
        </div>
     </div>
   );

@@ -2,7 +2,7 @@
 import { usePlayerStore } from '@/store/playerStore';
 import { broadcastEvent } from '@/lib/roomSync';
 import { TRACK_LIST } from '@/lib/tracks';
-import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaRandom, FaRedo, FaHeart, FaVolumeUp, FaListUl } from 'react-icons/fa';
+import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaHeart, FaVolumeUp, FaListUl, FaExpand } from 'react-icons/fa';
 
 export default function PlayerBar() {
   const { track, isPlaying, progress, volume, setVolume, roomCode } = usePlayerStore();
@@ -28,21 +28,18 @@ export default function PlayerBar() {
      if (currentIndex === -1) return;
      const nextSong = TRACK_LIST[(currentIndex + 1) % TRACK_LIST.length];
      broadcastEvent(roomCode, { type: 'song', trackId: nextSong.id, position: 0 });
-     console.log("CLICK WORKING: playNext");
   };
 
   const playPrev = () => {
      if (currentIndex === -1) return;
      const prevSong = TRACK_LIST[(currentIndex - 1 + TRACK_LIST.length) % TRACK_LIST.length];
      broadcastEvent(roomCode, { type: 'song', trackId: prevSong.id, position: 0 });
-     console.log("CLICK WORKING: playPrev");
   };
 
-  // Convert duration like "3:22" to seconds for the progress max
   const parseDuration = (dur: string) => {
     if (!dur) return 100;
     const [m, s] = dur.split(':').map(Number);
-    return m * 60 + s;
+    return m * 60 + (s || 0);
   };
   const durationSec = track ? parseDuration(track.duration) : 100;
 
@@ -53,64 +50,84 @@ export default function PlayerBar() {
   };
 
   return (
-    <div className="h-[84px] bg-[#0a0510]/95 backdrop-blur-xl border-t border-purple-900/40 sticky flex flex-col md:flex-row items-center justify-between px-4 shrink-0 bottom-0 select-none z-40 overflow-hidden w-full pointer-events-auto shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+    <div className="h-[96px] glass-panel border-t border-white/5 sticky bottom-0 flex items-center justify-between px-6 z-50 w-full shadow-[0_-20px_40px_rgba(0,0,0,0.4)]">
        
-       {/* Left: Album/Info */}
-       <div className="md:w-[250px] w-full flex items-center justify-between md:justify-start gap-4 h-full hidden md:flex shrink-0">
+       {/* Left: Track Info */}
+       <div className="w-[30%] flex items-center gap-4 min-w-0">
           {track ? (
             <>
-              <img src={`https://img.youtube.com/vi/${track.id}/hqdefault.jpg`} className="w-12 h-12 object-cover rounded" alt="" />
-              <div className="flex flex-col truncate">
-                <span className="text-[14px] text-white font-medium hover:underline cursor-pointer truncate">{track.title}</span>
-                <span className="text-[12px] text-[#aaaaaa] hover:underline cursor-pointer truncate">{track.artist}</span>
+              <div className="relative group">
+                <img src={`https://img.youtube.com/vi/${track.id}/hqdefault.jpg`} className="w-14 h-14 object-cover rounded-2xl shadow-lg transition-transform group-hover:scale-105" alt="" />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-black/40 to-transparent"></div>
               </div>
-              <FaHeart className="text-gray-400 hover:text-white cursor-pointer transition ml-auto md:ml-4 text-sm" />
+              <div className="flex flex-col truncate">
+                <span className="text-sm font-black italic tracking-tight truncate">{track.title}</span>
+                <span className="text-[11px] font-medium text-white/40 uppercase tracking-widest truncate">{track.artist}</span>
+              </div>
+              <button className="p-2 hover:bg-white/5 rounded-full transition-colors ml-2">
+                <FaHeart className="text-pink-500 text-sm animate-pulse" />
+              </button>
             </>
           ) : (
-            <span className="text-sm text-gray-500">Nothing playing</span>
+            <div className="flex items-center gap-4 opacity-20">
+               <div className="w-14 h-14 bg-white/5 rounded-2xl"></div>
+               <span className="text-xs font-black uppercase tracking-widestit">Silence is Golden</span>
+            </div>
           )}
        </div>
 
-       {/* Center: Controls */}
-       <div className="flex flex-col items-center flex-1 max-w-[700px] w-full h-full justify-center md:px-8">
-           <div className="flex items-center gap-6 mb-1">
-             <FaRandom className="text-gray-400 hover:text-white cursor-pointer text-sm" />
-             <FaStepBackward onClick={playPrev} className="text-gray-200 hover:text-white cursor-pointer text-lg" />
-             <div onClick={togglePlay} className="w-10 h-10 bg-white rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shrink-0">
-                {isPlaying ? <FaPause className="text-black text-sm" /> : <FaPlay className="text-black text-sm ml-1" />}
-             </div>
-             <FaStepForward onClick={playNext} className="text-gray-200 hover:text-white cursor-pointer text-lg" />
-             <FaRedo className="text-gray-400 hover:text-white cursor-pointer text-sm" />
+       {/* Center: Controls & Scrubber */}
+       <div className="flex-1 max-w-[600px] flex flex-col items-center">
+           <div className="flex items-center gap-8 mb-2">
+             <button onClick={playPrev} className="text-white/40 hover:text-white transition-colors">
+                <FaStepBackward className="text-lg" />
+             </button>
+             <button 
+                onClick={togglePlay} 
+                className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]"
+              >
+                {isPlaying ? <FaPause className="text-lg" /> : <FaPlay className="text-lg ml-1" />}
+             </button>
+             <button onClick={playNext} className="text-white/40 hover:text-white transition-colors">
+                <FaStepForward className="text-lg" />
+             </button>
           </div>
 
-          <div className="flex items-center gap-3 w-full text-[11px] text-[#aaaaaa] font-medium">
-             <span className="w-8 text-right">{formatTime(progress)}</span>
-             <input 
-               type="range"
-               min={0}
-               max={durationSec}
-               value={progress || 0}
-               onChange={handleSeek}
-               className="flex-1 h-[3px] accent-ytRed bg-gray-600 rounded-full cursor-pointer hover:h-[4px] transition-all"
-             />
-             <span className="w-8 text-left">{track ? track.duration : '0:00'}</span>
+          <div className="flex items-center gap-4 w-full group">
+             <span className="text-[10px] font-black text-white/30 w-10 text-right font-mono">{formatTime(progress)}</span>
+             <div className="relative flex-1 h-6 flex items-center">
+                <input 
+                  type="range"
+                  min={0}
+                  max={durationSec}
+                  value={progress || 0}
+                  onChange={handleSeek}
+                  className="player-slider w-full"
+                />
+             </div>
+             <span className="text-[10px] font-black text-white/30 w-10 text-left font-mono">{track ? track.duration : '0:00'}</span>
           </div>
        </div>
 
-       {/* Right: Volume & Extra */}
-       <div className="md:w-[250px] w-full justify-end items-center gap-4 hidden md:flex shrink-0 pr-2">
-          <FaListUl className="text-gray-400 hover:text-white cursor-pointer text-sm" />
-          <div className="flex items-center gap-2 group">
-             <FaVolumeUp className="text-gray-400 hover:text-white cursor-pointer text-sm" />
+       {/* Right: Actions */}
+       <div className="w-[30%] flex justify-end items-center gap-6">
+          <div className="flex items-center gap-3">
+             <FaVolumeUp className="text-white/20 text-xs" />
              <input 
-               type="range"
-               min={0}
-               max={100}
-               value={volume}
-               onChange={handleVolume}
-               className="w-20 h-[3px] accent-white bg-gray-600 rounded-full cursor-pointer opacity-80 group-hover:opacity-100"
+                type="range"
+                min={0}
+                max={100}
+                value={volume}
+                onChange={handleVolume}
+                className="volume-slider w-24"
              />
           </div>
+          <button className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+            <FaListUl className="text-white/40 text-xs" />
+          </button>
+          <button className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
+            <FaExpand className="text-white/40 text-xs" />
+          </button>
        </div>
     </div>
   );

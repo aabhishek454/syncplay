@@ -8,24 +8,37 @@ export type ToastMessage = {
   message: string;
 };
 
+export type ChatMessage = {
+  id: string;
+  sender: string;
+  text: string;
+  timestamp: number;
+};
+
 type PlayerState = {
   roomCode: string;
   identity: Identity;
+  user: 'abhishek' | 'radhika' | null;
+  isAuthenticated: boolean;
   track: Track | null;
   isPlaying: boolean;
   progress: number;
   volume: number;
   latency: number;
-  networkOffset: number; // local + offset = hostTime
+  networkOffset: number;
   controlMode: 'HOST' | 'SHARED';
   isResyncing: boolean;
   partnerOnline: boolean;
   audioUnlocked: boolean;
   toasts: ToastMessage[];
+  messages: ChatMessage[];
   currentView: 'HOME' | 'EXPLORE' | 'LIBRARY' | 'LIKED';
+  searchQuery: string;
   
   setRoomCode: (code: string) => void;
   setIdentity: (identity: Identity) => void;
+  setUser: (user: 'abhishek' | 'radhika' | null) => void;
+  setAuthenticated: (auth: boolean) => void;
   setControlMode: (mode: 'HOST' | 'SHARED') => void;
   setTrack: (track: Track | null) => void;
   setIsPlaying: (playing: boolean) => void;
@@ -37,30 +50,36 @@ type PlayerState = {
   setPartnerOnline: (online: boolean) => void;
   setAudioUnlocked: (unlocked: boolean) => void;
   setCurrentView: (view: 'HOME' | 'EXPLORE' | 'LIBRARY' | 'LIKED') => void;
+  setSearchQuery: (q: string) => void;
   addToast: (msg: string) => void;
   removeToast: (id: string) => void;
+  addMessage: (msg: ChatMessage) => void;
 };
 
 export const usePlayerStore = create<PlayerState>((set) => ({
-  roomCode: '',
+  roomCode: '1609', // Hardcoded as per special request
   identity: 'host',
+  user: null,
+  isAuthenticated: false,
   track: null,
   isPlaying: false,
   progress: 0,
   volume: 100,
   latency: 0,
   networkOffset: 0,
-  controlMode: 'SHARED', // Default to shared for this specific romantic couple app
+  controlMode: 'SHARED',
   isResyncing: false,
   partnerOnline: false,
   audioUnlocked: false,
   toasts: [],
+  messages: [],
   currentView: 'HOME',
+  searchQuery: '',
   
   setRoomCode: (code) => set({ roomCode: code }),
-  setIdentity: (identity) => {
-     set({ identity, audioUnlocked: identity === 'host' }); // Host unlocks automatically
-  },
+  setIdentity: (identity) => set({ identity, audioUnlocked: identity === 'host' }),
+  setUser: (user) => set({ user, isAuthenticated: !!user }),
+  setAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
   setControlMode: (controlMode) => set({ controlMode }),
   setTrack: (track) => set({ track }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
@@ -72,13 +91,15 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setPartnerOnline: (partnerOnline) => set({ partnerOnline }),
   setAudioUnlocked: (audioUnlocked) => set({ audioUnlocked }),
   setCurrentView: (currentView) => set({ currentView }),
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
   
   addToast: (msg) => {
     const id = Math.random().toString(36).substring(7);
     set((state) => ({ toasts: [...state.toasts, { id, message: msg }] }));
     setTimeout(() => {
       set((state) => ({ toasts: state.toasts.filter(t => t.id !== id) }));
-    }, 2200); // Fades out after 2.2s as specified
+    }, 2200);
   },
   removeToast: (id) => set((state) => ({ toasts: state.toasts.filter(t => t.id !== id) })),
+  addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
 }));

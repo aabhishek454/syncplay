@@ -21,7 +21,6 @@
     "react-youtube": "10.1.0",
     "tailwindcss": "3.4.1",
     "youtube-search-api": "^2.0.1",
-    "yt-search": "^2.13.1",
     "zustand": "4.5.2"
   },
   "devDependencies": {
