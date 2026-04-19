@@ -30,13 +30,13 @@ export default function TopBar({ onSearch }: { onSearch?: (query: string) => voi
   };
 
   return (
-    <div className="h-[70px] bg-[#0a0510]/80 backdrop-blur-xl border-b border-purple-900/50 flex items-center justify-between px-6 shrink-0 relative z-50 shadow-[0_10px_30px_rgba(124,58,237,0.1)] pointer-events-auto">
+    <div className="h-[70px] bg-[#0a0510]/80 backdrop-blur-xl border-b border-purple-900/40 flex items-center justify-between px-6 shrink-0 relative z-[45] shadow-[0_10px_30px_rgba(0,0,0,0.4)] pointer-events-auto">
       
       {/* Floating Hearts Background (CSS implemented natively via pseudo elements or background pattern) */}
-      <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mixing-screen mix-blend-screen"></div>
+      <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mixing-screen mix-blend-screen z-0"></div>
 
       {/* LEFT: Love Theme Logo */}
-      <div className="flex items-center gap-3 cursor-pointer z-10 w-1/3">
+      <div className="flex items-center gap-3 cursor-pointer z-10 w-1/3" onClick={() => console.log("CLICK WORKING: TopBar Logo")}>
         <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-purple-500/30 ring-1 ring-white/10">
            <FaHeart className="text-white text-lg animate-pulse" />
         </div>

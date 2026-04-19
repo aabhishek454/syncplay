@@ -1,5 +1,5 @@
 import { usePlayerStore, Identity } from '@/store/playerStore';
-import { TRACK_LIST } from './tracks';
+import { TRACK_LIST, Track } from './tracks';
 
 let peerInstance: any = null;
 let connectionInstance: any = null;
@@ -17,10 +17,10 @@ export type SyncPayload =
   | { type: 'play'; position: number }
   | { type: 'pause'; position: number }
   | { type: 'seek'; position: number }
-  | { type: 'song'; trackId: string; position: number }
+  | { type: 'song'; trackId: string; position: number; trackMetadata?: Track }
   | { type: 'heartbeat'; position: number; isPlaying: boolean }
   | { type: 'requestSync' }
-  | { type: 'syncState'; trackId: string; isPlaying: boolean; position: number }
+  | { type: 'syncState'; trackId: string; isPlaying: boolean; position: number; trackMetadata?: Track }
   | { type: 'modeChange'; mode: 'HOST' | 'SHARED' }
   | { type: 'ping'; tempTs: number }
   | { type: 'pong'; tempTs: number; hostTs: number; hostReceiptTs: number };
@@ -193,14 +193,17 @@ function handleBroadcast(event: SyncEvent) {
            type: 'syncState',
            trackId: store.track?.id || '',
            isPlaying: store.isPlaying,
-           position: store.progress
+           position: store.progress,
+           trackMetadata: store.track || undefined
         });
      }
      return;
   }
   
   if (p.type === 'syncState' && isPartner) {
-     const track = TRACK_LIST.find(t => t.id === p.trackId);
+     let track = TRACK_LIST.find(t => t.id === p.trackId);
+     if (!track && p.trackMetadata) track = p.trackMetadata;
+     
      if (track) store.setTrack(track);
      
      // Delay Compensated Position
@@ -254,7 +257,9 @@ function handleBroadcast(event: SyncEvent) {
     if (isPartner) store.addToast(`${displayPartnerName} seeked`);
   } 
   else if (p.type === 'song') {
-    const track = TRACK_LIST.find(t => t.id === p.trackId);
+    let track = TRACK_LIST.find(t => t.id === p.trackId);
+    if (!track && p.trackMetadata) track = p.trackMetadata;
+    
     if (track) {
       store.setTrack(track);
       store.setIsPlaying(true);
@@ -283,19 +288,19 @@ function startHeartbeat() {
 }
 
 // User-Facing API for UI triggers (Auto-wraps into Event)
-export function broadcastEvent(roomCode: string, payload: Partial<SyncPayload>) {
-  if (!roomCode ) return;
+export function broadcastEvent(roomCode: string, payload: Partial<SyncPayload>, trackMetadata?: Track) {
+  if (!roomCode) return;
   if (actionLock) {
-    console.log("ACTION BLOCKED: Debounce active", payload.type);
+    console.log("[LOCK] Action Dropped (Debounce):", payload.type);
     return;
   }
   
-  console.log("ACTION TRIGGERED:", payload.type, payload);
+  console.log("[SYNC] Triggering Action:", payload.type, payload);
   actionLock = true;
   setTimeout(() => {
     actionLock = false;
-    console.log("ACTION LOCK RELEASED");
-  }, 500); 
+    console.log("[LOCK] Action Lock Released");
+  }, 400); // Strict 400ms debounce per user instructions
   
   const store = usePlayerStore.getState();
   
@@ -307,7 +312,7 @@ export function broadcastEvent(roomCode: string, payload: Partial<SyncPayload>) 
      }
   }
   const pos = ('position' in payload) ? payload.position : store.progress;
-  const fullPayload = { ...payload, position: pos } as SyncPayload;
+  const fullPayload = { ...payload, position: pos, trackMetadata: trackMetadata || (payload as any).trackMetadata } as SyncPayload;
   // Optimistically execute purely locally
   const tempEvent = createEvent(fullPayload);
   handleBroadcast(tempEvent);

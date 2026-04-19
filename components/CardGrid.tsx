@@ -38,7 +38,7 @@ const Card = memo(function Card({ track }: { track: Track }) {
      if (isActive) {
         broadcastEvent(roomCode, { type: isPlaying ? 'pause' : 'play' });
      } else {
-        broadcastEvent(roomCode, { type: 'song', trackId: track.id, position: 0 });
+        broadcastEvent(roomCode, { type: 'song', trackId: track.id, position: 0 }, track);
      }
   }, [isActive, isPlaying, roomCode, track.id, track.title]);
 

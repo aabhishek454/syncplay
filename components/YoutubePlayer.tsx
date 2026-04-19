@@ -10,15 +10,29 @@ export default function YoutubePlayer() {
   useEffect(() => {
     if (!playerRef.current || !track) return;
 
-    // Load the video if it changed
-    if (typeof playerRef.current.loadVideoById === 'function') {
-        playerRef.current.loadVideoById(track.id);
-        setTimeout(() => {
-           if (usePlayerStore.getState().isPlaying && typeof playerRef.current.playVideo === 'function') {
-               playerRef.current.playVideo();
-           }
-        }, 300);
-    }
+    // Improved resilient loader
+    const loadVideo = (retryCount = 0) => {
+        if (!playerRef.current || !track) return;
+        
+        if (typeof playerRef.current.loadVideoById === 'function') {
+            try {
+                playerRef.current.loadVideoById(track.id);
+                setTimeout(() => {
+                    const store = usePlayerStore.getState();
+                    if (store.isPlaying && typeof playerRef.current.playVideo === 'function') {
+                        playerRef.current.playVideo();
+                    }
+                }, 500);
+            } catch (err) {
+                console.error("Load Video Error:", err);
+            }
+        } else if (retryCount < 5) {
+            // Player exists but functions not ready, retry
+            setTimeout(() => loadVideo(retryCount + 1), 500);
+        }
+    };
+
+    loadVideo();
   }, [track?.id]);
 
   const isSeekingLock = useRef(false);

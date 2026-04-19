@@ -53,7 +53,7 @@ export default function PlayerBar() {
   };
 
   return (
-    <div className="h-[84px] bg-ytBlack border-t border-ytBorder sticky flex flex-col md:flex-row items-center justify-between px-4 shrink-0 bottom-0 select-none z-50 overflow-hidden w-full pointer-events-auto">
+    <div className="h-[84px] bg-[#0a0510]/95 backdrop-blur-xl border-t border-purple-900/40 sticky flex flex-col md:flex-row items-center justify-between px-4 shrink-0 bottom-0 select-none z-40 overflow-hidden w-full pointer-events-auto shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
        
        {/* Left: Album/Info */}
        <div className="md:w-[250px] w-full flex items-center justify-between md:justify-start gap-4 h-full hidden md:flex shrink-0">

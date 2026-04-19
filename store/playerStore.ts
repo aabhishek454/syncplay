@@ -22,6 +22,7 @@ type PlayerState = {
   partnerOnline: boolean;
   audioUnlocked: boolean;
   toasts: ToastMessage[];
+  currentView: 'HOME' | 'EXPLORE' | 'LIBRARY' | 'LIKED';
   
   setRoomCode: (code: string) => void;
   setIdentity: (identity: Identity) => void;
@@ -35,6 +36,7 @@ type PlayerState = {
   setResyncing: (resync: boolean) => void;
   setPartnerOnline: (online: boolean) => void;
   setAudioUnlocked: (unlocked: boolean) => void;
+  setCurrentView: (view: 'HOME' | 'EXPLORE' | 'LIBRARY' | 'LIKED') => void;
   addToast: (msg: string) => void;
   removeToast: (id: string) => void;
 };
@@ -53,6 +55,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   partnerOnline: false,
   audioUnlocked: false,
   toasts: [],
+  currentView: 'HOME',
   
   setRoomCode: (code) => set({ roomCode: code }),
   setIdentity: (identity) => {
@@ -68,6 +71,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setResyncing: (resyncing) => set({ isResyncing: resyncing }),
   setPartnerOnline: (partnerOnline) => set({ partnerOnline }),
   setAudioUnlocked: (audioUnlocked) => set({ audioUnlocked }),
+  setCurrentView: (currentView) => set({ currentView }),
   
   addToast: (msg) => {
     const id = Math.random().toString(36).substring(7);
