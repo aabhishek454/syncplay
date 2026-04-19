@@ -55,6 +55,7 @@ export default function RoomPage() {
         }
       } catch (err) {
         console.error("Search fetch failed:", err);
+        usePlayerStore.getState().addToast("Search partially limited ⚠️ Trying local library...");
       } finally {
         setIsSearching(false);
       }
