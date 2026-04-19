@@ -38,7 +38,7 @@ export async function initRoomSync(roomCode: string) {
   const store = usePlayerStore.getState();
   const isHost = store.identity === 'host';
   // Use a unique prefix to avoid global PeerJS ID collisions
-  const hostId = `syncplay-love-v2-${roomCode}-host`;
+  const hostId = `syncplay-love-v3-${roomCode}-host`;
   
   if (peerInstance) peerInstance.destroy();
   
@@ -106,14 +106,28 @@ export async function initRoomSync(roomCode: string) {
   }
 
   const unsubscribe = () => {
-    if (peerInstance) peerInstance.destroy();
+    console.log("[PeerJS] Cleaning up connection...");
+    if (connectionInstance) {
+      connectionInstance.close();
+    }
+    if (peerInstance) {
+      peerInstance.disconnect();
+      peerInstance.destroy();
+    }
     if (heartbeatInterval) clearInterval(heartbeatInterval);
     if (heartbeatTimeout) clearTimeout(heartbeatTimeout);
     connectionInstance = null;
     peerInstance = null;
   };
 
-  return { unsubscribe };
+  window.addEventListener('beforeunload', unsubscribe);
+
+  return { 
+    unsubscribe: () => {
+      window.removeEventListener('beforeunload', unsubscribe);
+      unsubscribe();
+    } 
+  };
 }
 
 function reconnectPeer(hostId: string) {

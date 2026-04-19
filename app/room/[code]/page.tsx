@@ -87,14 +87,20 @@ export default function RoomPage() {
       usePlayerStore.getState().setUser(preservedUser as any);
     }
 
-    let unsubscribe: (() => void) | undefined;
+    let cleanupFunction: (() => void) | null = null;
+    let isMounted = true;
     
     initRoomSync(code).then(res => {
-        unsubscribe = res.unsubscribe;
+        if (!isMounted) {
+            res.unsubscribe();
+        } else {
+            cleanupFunction = res.unsubscribe;
+        }
     });
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      isMounted = false;
+      if (cleanupFunction) cleanupFunction();
       setPartnerOnline(false);
     };
   }, [code]);
