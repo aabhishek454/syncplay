@@ -1,114 +1,88 @@
 'use client';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { FaPlay } from 'react-icons/fa';
-
-function generateCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'SP-';
-  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
-}
+import { useEffect, useState } from 'react';
+import { FaHeart, FaPlay } from 'react-icons/fa';
 
 export default function LandingPage() {
   const router = useRouter();
-  const [joinCode, setJoinCode] = useState('');
-  const [createdCode, setCreatedCode] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [petals, setPetals] = useState<{ id: number; left: string; delay: string; duration: string; size: string }[]>([]);
 
-  const createRoom = async () => {
-    setLoading(true);
-    const code = generateCode();
-    
-    // Set identity as host
-    localStorage.setItem(`syncplay_identity_${code}`, 'host');
-    setCreatedCode(code);
-    setLoading(false);
-  };
+  useEffect(() => {
+    const newPetals = Array.from({ length: 15 }).map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 5}s`,
+      duration: `${6 + Math.random() * 6}s`,
+      size: `${10 + Math.random() * 15}px`,
+    }));
+    setPetals(newPetals);
+  }, []);
 
-  const joinRoom = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const code = joinCode.trim().toUpperCase();
-    if (!code) return;
-    
-    setLoading(true);
-
-    localStorage.setItem(`syncplay_identity_${code}`, 'guest');
-    router.push(`/room/${code}`);
+  const enterOurWorld = () => {
+    router.push('/room/1609');
   };
 
   return (
-    <main className="flex flex-col items-center justify-center flex-1 bg-ytDark p-4 relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-ytRed/20 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 blur-[120px] rounded-full pointer-events-none"></div>
-
-      <div className="z-10 flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 bg-ytRed rounded-xl flex items-center justify-center">
-           <FaPlay className="text-white ml-1 text-xl" />
+    <main className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Animated Petals */}
+      {petals.map((petal) => (
+        <div
+          key={petal.id}
+          className="petal"
+          style={{
+            left: petal.left,
+            animationDelay: petal.delay,
+            animationDuration: petal.duration,
+            fontSize: petal.size,
+            color: Math.random() > 0.5 ? '#E8447A' : '#FF8FAB',
+          }}
+        >
+          <FaHeart />
         </div>
-        <h1 className="text-5xl font-bold tracking-tight">SyncPlay</h1>
-      </div>
-      
-      <p className="text-gray-400 text-xl font-light mb-12 text-center max-w-md">
-        Listen together. In perfect sync.
-      </p>
+      ))}
 
-      {!createdCode ? (
-        <div className="flex flex-col w-full max-w-sm gap-8">
-          <button
-            onClick={createRoom}
-            disabled={loading}
-            className="w-full py-4 bg-white text-black font-semibold rounded-full hover:bg-gray-200 transition text-lg disabled:opacity-50"
-          >
-            {loading ? 'Creating...' : 'Create Room'}
-          </button>
-
-          <div className="relative flex items-center justify-center">
-            <div className="absolute border-t border-ytBorder w-full"></div>
-            <span className="bg-ytDark px-4 text-sm text-gray-500 relative z-10 font-medium tracking-widest uppercase">OR</span>
+      {/* Main Content */}
+      <div className="z-10 text-center px-4 max-w-2xl animate-float">
+        <div className="glass-panel p-12 rounded-[40px] glow-pink border-white/10 relative overflow-hidden backdrop-blur-3xl">
+          {/* Decorative Glow */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#E8447A] to-transparent opacity-50"></div>
+          
+          <div className="mb-8 flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 blur-2xl bg-[#E8447A] opacity-20 rounded-full"></div>
+              <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-full flex items-center justify-center relative">
+                <FaHeart className="text-[#E8447A] text-4xl animate-pulse" />
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={joinRoom} className="flex flex-col gap-3">
-            <input
-              type="text"
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value)}
-              placeholder="Enter room code (SP-XXXX)"
-              className="w-full bg-ytGray border border-ytBorderActive rounded-xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-ytRed transition uppercase text-center tracking-widest"
-            />
-            <button
-              type="submit"
-              disabled={loading || !joinCode}
-              className="w-full py-4 bg-ytBorderActive text-white font-medium rounded-full hover:bg-gray-700 transition disabled:opacity-50"
-            >
-              Join Room
-            </button>
-          </form>
+          <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter glow-text">
+            Abhishek <span className="text-[#E8447A]">❤️</span> Radhika
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-white/60 font-light mb-12 tracking-wide">
+            Our private space for shared rhythms and endless melodies.
+          </p>
+
+          <button
+            onClick={enterOurWorld}
+            className="group relative px-12 py-5 bg-[#E8447A] rounded-full font-bold text-xl transition-all duration-500 hover:scale-105 hover:shadow-[0_0_40px_rgba(232,68,122,0.4)] active:scale-95 flex items-center gap-3 mx-auto"
+          >
+            <span className="relative z-10">Step Into Our World</span>
+            <FaPlay className="text-sm group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
-      ) : (
-        <div className="w-full max-w-sm bg-ytGray border border-ytBorderActive p-8 rounded-2xl flex flex-col items-center gap-6 text-center animate-in fade-in zoom-in duration-300">
-           <div className="p-4 bg-ytRed/10 rounded-full">
-              <FaPlay className="text-ytRed text-3xl ml-1" />
-           </div>
-           <div>
-             <h2 className="text-2xl font-bold mb-2">Room Created!</h2>
-             <p className="text-gray-400">Share this code with Radhika:</p>
-           </div>
-           
-           <div className="bg-ytDark border border-ytBorderActive px-6 py-4 rounded-xl w-full">
-              <span className="text-3xl font-mono tracking-widest font-bold text-ytRed">{createdCode}</span>
-           </div>
-           
-           <button
-             onClick={() => router.push(`/room/${createdCode}`)}
-             className="w-full py-4 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition mt-2"
-           >
-             Enter Room
-           </button>
-        </div>
-      )}
+
+        {/* Footer info */}
+        <p className="mt-8 text-white/30 text-sm font-medium tracking-[0.3em] uppercase">
+          Established September 16
+        </p>
+      </div>
+
+      {/* Background radial gradients for depth */}
+      <div className="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-[#E8447A]/10 blur-[150px] rounded-full"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[#2D0A2E]/30 blur-[150px] rounded-full"></div>
     </main>
   );
 }
+
