@@ -8,7 +8,9 @@ let heartbeatTimeout: NodeJS.Timeout | null = null;
 let isReconnecting = false;
 
 // Conflict Debounce Lock
-let seekingLock = false;
+let actionLock = false;
+let lastProcessedEventTs = 0;
+let lastProcessedEventId = '';
 let processedEventIds = new Set<string>();
 
 export type SyncPayload =
@@ -19,6 +21,7 @@ export type SyncPayload =
   | { type: 'heartbeat'; position: number; isPlaying: boolean }
   | { type: 'requestSync' }
   | { type: 'syncState'; trackId: string; isPlaying: boolean; position: number }
+  | { type: 'modeChange'; mode: 'HOST' | 'SHARED' }
   | { type: 'ping'; tempTs: number }
   | { type: 'pong'; tempTs: number; hostTs: number; hostReceiptTs: number };
 
@@ -209,13 +212,28 @@ function handleBroadcast(event: SyncEvent) {
      store.setResyncing(false);
      return;
   }
-
-  // --- HOST AUTHORITY MODEL ---
-  // If we are Host, we can accept guest actions if we want to allow shared control.
-  // But let's strictly reject playback commands from guest to maintain perfect sync,
-  // EXCEPT for 'play/pause', we might allow shared control. Let's allow but Host processes it and rebroadcasts it.
   
+  if (p.type === 'modeChange' && isPartner && !isHost) {
+      store.setControlMode(p.mode);
+      store.addToast(`Control Mode upgraded to ${p.mode} by Host 👑`);
+      return;
+  }
+
+  // --- CONFLICT RESOLUTION (Last Timestamp Wins) ---
   const displayPartnerName = isHost ? 'Radhika' : 'Partner';
+
+  if (p.type === 'play' || p.type === 'pause' || p.type === 'seek' || p.type === 'song') {
+      // Protect host authority natively
+      if (store.controlMode === 'HOST' && isPartner && !isHost) return;
+      
+      // Last Timestamp Wins Logic
+      if (event.hostTime < lastProcessedEventTs) {
+          // If the timestamp is technically older, check if its structurally newer via string comparison
+          if (event.id <= lastProcessedEventId) return; // Stale action, drop it
+      }
+      lastProcessedEventTs = event.hostTime;
+      lastProcessedEventId = event.id;
+  }
 
   // Delay/Drift Compensation for incoming commands
   const timeSinceEvent = (getCorrectedTime() - event.hostTime) / 1000;
@@ -229,7 +247,7 @@ function handleBroadcast(event: SyncEvent) {
   else if (p.type === 'pause') {
     store.setIsPlaying(false);
     store.setProgress(p.position);
-    if (isPartner) store.addToast(`${displayPartnerName} paused`);
+    if (isPartner) store.addToast(`${displayPartnerName} paused ⏸️`);
   } 
   else if (p.type === 'seek') {
     store.setProgress(compensatedPos);
@@ -241,7 +259,7 @@ function handleBroadcast(event: SyncEvent) {
       store.setTrack(track);
       store.setIsPlaying(true);
       store.setProgress(0);
-      if (isPartner) store.addToast(`${displayPartnerName} changed song`);
+      if (isPartner) store.addToast(`${displayPartnerName} changed the song 🎵`);
     }
   }
 }
@@ -266,14 +284,18 @@ function startHeartbeat() {
 
 // User-Facing API for UI triggers (Auto-wraps into Event)
 export function broadcastEvent(roomCode: string, payload: Partial<SyncPayload>) {
-  if (!roomCode) return;
+  if (!roomCode || actionLock) return;
+  actionLock = true;
+  setTimeout(() => actionLock = false, 300); // 300ms debounce per user instructions
+  
   const store = usePlayerStore.getState();
   
-  // HOST AUTHORITY: Guests cannot organically change song or manually seek to cause conflicts.
-  // They can only play/pause. This fulfills strict conflict prevention requirements.
-  if (store.identity === 'guest' && (payload.type === 'seek' || payload.type === 'song')) {
-     store.addToast("Only Host can perform this action");
-     return;
+  // HOST AUTHORITY: Guests cannot organically change song or manually seek if in HOST mode.
+  if (store.controlMode === 'HOST' && store.identity === 'guest') {
+     if (payload.type === 'seek' || payload.type === 'song' || payload.type === 'play' || payload.type === 'pause') {
+         store.addToast("Only Host can perform this action right now 👑");
+         return;
+     }
   }
   const pos = ('position' in payload) ? payload.position : store.progress;
   const fullPayload = { ...payload, position: pos } as SyncPayload;

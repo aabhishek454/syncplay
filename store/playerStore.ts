@@ -17,6 +17,7 @@ type PlayerState = {
   volume: number;
   latency: number;
   networkOffset: number; // local + offset = hostTime
+  controlMode: 'HOST' | 'SHARED';
   isResyncing: boolean;
   partnerOnline: boolean;
   audioUnlocked: boolean;
@@ -24,6 +25,7 @@ type PlayerState = {
   
   setRoomCode: (code: string) => void;
   setIdentity: (identity: Identity) => void;
+  setControlMode: (mode: 'HOST' | 'SHARED') => void;
   setTrack: (track: Track | null) => void;
   setIsPlaying: (playing: boolean) => void;
   setProgress: (progress: number) => void;
@@ -46,6 +48,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   volume: 100,
   latency: 0,
   networkOffset: 0,
+  controlMode: 'SHARED', // Default to shared for this specific romantic couple app
   isResyncing: false,
   partnerOnline: false,
   audioUnlocked: false,
@@ -55,6 +58,7 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setIdentity: (identity) => {
      set({ identity, audioUnlocked: identity === 'host' }); // Host unlocks automatically
   },
+  setControlMode: (controlMode) => set({ controlMode }),
   setTrack: (track) => set({ track }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setProgress: (progress) => set({ progress }),
