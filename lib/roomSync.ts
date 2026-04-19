@@ -37,24 +37,65 @@ export type SyncEvent = {
 export async function initRoomSync(roomCode: string) {
   const store = usePlayerStore.getState();
   const isHost = store.identity === 'host';
-  const hostId = `syncplay-app-${roomCode}-host`;
+  // Use a unique prefix to avoid global PeerJS ID collisions
+  const hostId = `syncplay-love-v2-${roomCode}-host`;
   
   if (peerInstance) peerInstance.destroy();
   
   const PeerJS = (await import('peerjs')).default;
   
+  // High-reliability STUN servers for production NAT traversal
+  const peerConfig = {
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+      ]
+    }
+  };
+
   if (isHost) {
-    peerInstance = new PeerJS(hostId);
+    peerInstance = new PeerJS(hostId, peerConfig);
+    peerInstance.on('error', (err: any) => {
+      console.error("[PeerJS Host Error]:", err.type, err);
+      if (err.type === 'unavailable-id') {
+         store.addToast("Sync ID taken. Retrying in 5s... 🔄");
+         setTimeout(() => initRoomSync(roomCode), 5000);
+      } else {
+         store.addToast("Sync error. Refresh if it persists. ⚠️");
+      }
+    });
+
     peerInstance.on('connection', (conn: any) => {
+      console.log("[PeerJS] Radhika connected! 💖");
+      connectionInstance = conn;
+      setupConnection(conn);
+      store.addToast("Radhika is here! Listening together. 💝");
+    });
+  } else {
+    peerInstance = new PeerJS(undefined, peerConfig);
+    peerInstance.on('open', (id: string) => {
+      console.log("[PeerJS] Guest ID created:", id);
+      const conn = peerInstance.connect(hostId, {
+         reliable: true
+      });
       connectionInstance = conn;
       setupConnection(conn);
     });
-  } else {
-    peerInstance = new PeerJS();
-    peerInstance.on('open', () => {
-      const conn = peerInstance.connect(hostId);
-      connectionInstance = conn;
-      setupConnection(conn);
+
+    peerInstance.on('error', (err: any) => {
+       console.error("[PeerJS Guest Error]:", err.type, err);
+       if (err.type === 'peer-unavailable') {
+          // Host not online yet, silent retry
+          setTimeout(() => {
+             if (peerInstance && !connectionInstance?.open) {
+                const conn = peerInstance.connect(hostId);
+                connectionInstance = conn;
+                setupConnection(conn);
+             }
+          }, 3000);
+       }
     });
     
     // Auto reconnect on guest disconnect
@@ -68,6 +109,7 @@ export async function initRoomSync(roomCode: string) {
     if (heartbeatInterval) clearInterval(heartbeatInterval);
     if (heartbeatTimeout) clearTimeout(heartbeatTimeout);
     connectionInstance = null;
+    peerInstance = null;
   };
 
   return { unsubscribe };
