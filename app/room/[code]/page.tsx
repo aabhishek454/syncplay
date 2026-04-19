@@ -36,11 +36,15 @@ export default function RoomPage() {
 
     setRoomCode(code);
 
+    let unsubscribe: (() => void) | undefined;
+    
     // Using PeerJS now, we fetch state from host via requestSync event sent inside roomSync.ts open handler.
-    const { unsubscribe } = initRoomSync(code);
+    initRoomSync(code).then(res => {
+        unsubscribe = res.unsubscribe;
+    });
 
     return () => {
-      unsubscribe();
+      if (unsubscribe) unsubscribe();
       setPartnerOnline(false);
     };
   }, [code]);
