@@ -50,11 +50,23 @@ export default function RoomPage() {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
         const data = await res.json();
-        if (Array.isArray(data)) {
+        if (Array.isArray(data) && data.length > 0) {
           setSearchResults(data);
+        } else {
+          // Frontend local fallback if API returns empty
+          const local = TRACK_LIST.filter(t => 
+             t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+             t.artist.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+          setSearchResults(local);
         }
       } catch (err) {
         console.error("Search fetch failed:", err);
+        const local = TRACK_LIST.filter(t => 
+           t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           t.artist.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setSearchResults(local);
         usePlayerStore.getState().addToast("Search partially limited ⚠️ Trying local library...");
       } finally {
         setIsSearching(false);
@@ -134,9 +146,9 @@ export default function RoomPage() {
                           Results for "{searchQuery}"
                        </h2>
                        {isSearching && (
-                          <div className="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest">
-                             <span className="w-2 h-2 bg-purple-400 rounded-full animate-ping"></span>
-                             Searching...
+                          <div className="flex items-center gap-2 text-xs font-black text-pink-400 uppercase tracking-widest animate-pulse">
+                             <span className="w-2 h-2 bg-pink-400 rounded-full"></span>
+                             Searching YouTube...
                           </div>
                        )}
                     </div>

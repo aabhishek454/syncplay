@@ -3,6 +3,15 @@ import { TRACK_LIST } from '@/lib/tracks';
 
 export const dynamic = 'force-dynamic';
 
+// Public Invidious instances for failover if YT blocks Vercel
+const INVIDIOUS_INSTANCES = [
+  'https://yewtu.be',
+  'https://vid.puffyan.us',
+  'https://inv.riverside.rocks',
+  'https://invidious.namazso.eu',
+  'https://inv.tux.pizza'
+];
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('q');
@@ -13,38 +22,35 @@ export async function GET(request: Request) {
 
   const cleanQuery = query.trim();
 
-  // 1. DIRECT ID / URL DETECTION
+  // 1. DIRECT ID / URL DETECTION (Highest priority)
   const ytIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
   const directIdMatch = cleanQuery.match(ytIdRegex) || cleanQuery.match(/^([^"&?\/\s]{11})$/);
   
   if (directIdMatch) {
     const videoId = directIdMatch[1];
-    console.log(`[API] Direct ID Detected: ${videoId}`);
     return NextResponse.json([{
       id: videoId,
-      title: "Direct Video Link",
-      artist: "YouTube",
+      title: "Direct YouTube Link",
+      artist: "Video ID",
       duration: "--:--",
       thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
     }]);
   }
 
-  try {
-    // 2. LOCAL SEARCH FALLBACK (ALWAYS RELIABLE)
-    const localResults = TRACK_LIST.filter(t => 
-       t.title.toLowerCase().includes(cleanQuery.toLowerCase()) || 
-       t.artist.toLowerCase().includes(cleanQuery.toLowerCase())
-    );
+  // 2. LOCAL SEARCH (Always works, no matter what)
+  const localResults = TRACK_LIST.filter(t => 
+     t.title.toLowerCase().includes(cleanQuery.toLowerCase()) || 
+     t.artist.toLowerCase().includes(cleanQuery.toLowerCase())
+  );
 
-    // 3. ROBUST YOUTUBE SEARCH
-    console.log(`[API] Searching YouTube for: ${cleanQuery}`);
-    
-    // Attempt multi-source search
-    let youtubeResults: any[] = [];
-    
+  let youtubeResults: any[] = [];
+  
+  try {
+    // 3. PRIMARY: YouTube Modern API Scraper
+    console.log(`[API] Primary Search: ${cleanQuery}`);
     try {
       const youTubeSearch = require('youtube-search-api');
-      const r = await youTubeSearch.GetListByKeyword(cleanQuery, false, 20);
+      const r = await youTubeSearch.GetListByKeyword(cleanQuery, false, 25);
       if (r && r.items) {
         youtubeResults = r.items.map((v: any) => ({
           id: v.id,
@@ -55,28 +61,52 @@ export async function GET(request: Request) {
         }));
       }
     } catch (ytError) {
-      console.error("[API] Modern YT Search failed, falling back to legacy scraper:", ytError);
+      console.warn("[API] Primary YT Search blocked. Falling back to Invidious...");
+      
+      // 4. SECONDARY: Invidious Failover (YouTube Mirrors)
+      for (const instance of INVIDIOUS_INSTANCES) {
+        try {
+          const invRes = await fetch(`${instance}/api/v1/search?q=${encodeURIComponent(cleanQuery)}`, { signal: AbortSignal.timeout(3000) });
+          if (invRes.ok) {
+            const items = await invRes.json();
+            if (Array.isArray(items)) {
+              youtubeResults = items.slice(0, 20).map((v: any) => ({
+                id: v.videoId,
+                title: v.title,
+                artist: v.author,
+                duration: v.durationText || '0:00',
+                thumbnail: v.videoThumbnails?.[0]?.url || `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+              }));
+              if (youtubeResults.length > 0) break; // Found results!
+            }
+          }
+        } catch (invError) {
+          continue; // Try next instance
+        }
+      }
+    }
+
+    // 5. TERTIARY: Legacy Scraper (Last resort)
+    if (youtubeResults.length === 0) {
       try {
         const ytSearchLegacy = require('yt-search');
         const rl = await ytSearchLegacy(cleanQuery);
-        youtubeResults = (rl.videos || []).slice(0, 20).map((v: any) => ({
+        youtubeResults = (rl.videos || []).slice(0, 15).map((v: any) => ({
           id: v.videoId,
           title: v.title,
           artist: v.author.name,
           duration: v.timestamp,
           thumbnail: v.thumbnail,
         }));
-      } catch (legacyError) {
-        console.error("[API] All YouTube searches failed. Returning local results only.");
-      }
+      } catch (e) {}
     }
 
-    // Merge results, prioritizing local ones, and deduplicate
+    // Merge and deduplicate
     const combined = [...localResults];
     const seenIds = new Set(localResults.map(t => t.id));
 
     youtubeResults.forEach(yt => {
-      if (!seenIds.has(yt.id)) {
+      if (yt.id && !seenIds.has(yt.id)) {
         combined.push(yt);
         seenIds.add(yt.id);
       }
@@ -84,11 +114,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(combined.slice(0, 40));
   } catch (error) {
-    console.error('[API] Fatal search error:', error);
-    // Even if everything fails, return local results if any
-    const localFallback = TRACK_LIST.filter(t => 
-      t.title.toLowerCase().includes(cleanQuery.toLowerCase())
-    );
-    return NextResponse.json(localFallback);
+    console.error('[API] Fatal Error:', error);
+    return NextResponse.json(localResults); // Return what we have
   }
 }
