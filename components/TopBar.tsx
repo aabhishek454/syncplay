@@ -2,10 +2,17 @@
 import { useState, useEffect } from 'react';
 import { FaPlay, FaSearch, FaBell, FaUserCircle } from 'react-icons/fa';
 import { usePlayerStore } from '@/store/playerStore';
+import { sendEvent } from '@/lib/roomSync';
 
 export default function TopBar({ onSearch }: { onSearch: (query: string) => void }) {
-  const { roomCode, identity, partnerOnline } = usePlayerStore();
+  const { roomCode, identity, partnerOnline, latency, isResyncing, setResyncing } = usePlayerStore();
   const [query, setQuery] = useState('');
+
+  const handleManualResync = () => {
+    if (isResyncing) return;
+    setResyncing(true);
+    sendEvent({ type: 'requestSync' });
+  };
 
   // identity: 'host' is "You", 'guest' is "Radhika" (assuming context)
   const isHost = identity === 'host';
@@ -44,7 +51,25 @@ export default function TopBar({ onSearch }: { onSearch: (query: string) => void
 
       {/* RIGHT: Status & Avatars */}
       <div className="flex items-center gap-4">
-        
+        {/* Connection Quality & Resync (Guest only) */}
+        {!isHost && partnerOnline && (
+           <div className="flex items-center gap-2 mr-2">
+             <div className="flex items-center gap-1 bg-ytGray rounded-md px-2 py-1 text-xs">
+               <span className={`w-2 h-2 rounded-full ${latency < 80 ? 'bg-green-500' : latency < 200 ? 'bg-yellow-500' : 'bg-red-500'}`}></span>
+               <span className="text-gray-300 font-mono">{latency > 0 ? `${latency}ms` : '--'}</span>
+             </div>
+             
+             <button 
+               onClick={handleManualResync}
+               disabled={isResyncing}
+               className={`flex items-center justify-center bg-ytGray hover:bg-ytBorder hover:text-white text-gray-400 rounded-md p-1.5 transition ${isResyncing ? 'opacity-50 cursor-not-allowed' : ''}`}
+               title="Force Sync with Host"
+             >
+               <svg className={`w-3.5 h-3.5 ${isResyncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+             </button>
+           </div>
+        )}
+
         {/* Room Code Pill */}
         <div className="border border-ytRed/50 rounded-full py-1 px-3 flex items-center justify-center">
            <span className="text-xs font-mono text-ytRed tracking-[2px]">{roomCode}</span>

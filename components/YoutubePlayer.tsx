@@ -14,6 +14,8 @@ export default function YoutubePlayer() {
     playerRef.current.loadVideoById(track.id);
   }, [track?.id]);
 
+  const isSeekingLock = useRef(false);
+
   useEffect(() => {
     if (!playerRef.current || !track) return;
     try {
@@ -22,8 +24,11 @@ export default function YoutubePlayer() {
       }
       if (typeof playerRef.current.getCurrentTime === 'function' && typeof playerRef.current.seekTo === 'function') {
          const current = playerRef.current.getCurrentTime();
-         if (Math.abs(current - progress) > 1.5) {
+         // Initial sync response check
+         if (!isSeekingLock.current && Math.abs(current - progress) > 0.5) {
+            isSeekingLock.current = true;
             playerRef.current.seekTo(progress, true);
+            setTimeout(() => isSeekingLock.current = false, 500); // 500ms seek debounce lock!
          }
       }
       if (isPlaying) {
@@ -34,7 +39,7 @@ export default function YoutubePlayer() {
     } catch (e) {
       console.error("YT Player Error:", e);
     }
-  }, [isPlaying, progress, volume]); // track.id is intentionally omitted here as it triggers loadVideoById above
+  }, [isPlaying, progress, volume]); // track.id omitted intentionally
 
   const onReady: YouTubeProps['onReady'] = (e) => {
     playerRef.current = e.target;
@@ -55,8 +60,19 @@ export default function YoutubePlayer() {
       const interval = setInterval(() => {
         if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
            const time = playerRef.current.getCurrentTime();
-           // Update local store silently without triggering broadcast seek
-           usePlayerStore.setState({ progress: time });
+           
+           // AUTO-RESYNC DRIFT CORRECTION LOOP
+           // We evaluate true local drift against the player store's ideal progress.
+           // Only host or deeply-synced guests execute store mutations via media events.
+           const store = usePlayerStore.getState();
+           
+           // Let's project where the song SHOULD be according to our global state offset
+           // Wait, we just keep the Zustand store perfectly up-to-date with reality,
+           // AND if the browser drifts away from Zustand store...
+           if (store.isPlaying && !isSeekingLock.current) {
+               // Update Zustand silently so the timeline progresses smoothly.
+               usePlayerStore.setState({ progress: time });
+           }
         }
       }, 1000);
       return () => clearInterval(interval);

@@ -15,6 +15,9 @@ type PlayerState = {
   isPlaying: boolean;
   progress: number;
   volume: number;
+  latency: number;
+  networkOffset: number; // local + offset = hostTime
+  isResyncing: boolean;
   partnerOnline: boolean;
   toasts: ToastMessage[];
   
@@ -24,6 +27,9 @@ type PlayerState = {
   setIsPlaying: (playing: boolean) => void;
   setProgress: (progress: number) => void;
   setVolume: (volume: number) => void;
+  setLatency: (latency: number) => void;
+  setNetworkOffset: (offset: number) => void;
+  setResyncing: (resync: boolean) => void;
   setPartnerOnline: (online: boolean) => void;
   addToast: (msg: string) => void;
   removeToast: (id: string) => void;
@@ -36,6 +42,9 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   isPlaying: false,
   progress: 0,
   volume: 100,
+  latency: 0,
+  networkOffset: 0,
+  isResyncing: false,
   partnerOnline: false,
   toasts: [],
   
@@ -45,6 +54,9 @@ export const usePlayerStore = create<PlayerState>((set) => ({
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setProgress: (progress) => set({ progress }),
   setVolume: (volume) => set({ volume }),
+  setLatency: (latency) => set({ latency }),
+  setNetworkOffset: (offset) => set({ networkOffset: offset }),
+  setResyncing: (resyncing) => set({ isResyncing: resyncing }),
   setPartnerOnline: (partnerOnline) => set({ partnerOnline }),
   
   addToast: (msg) => {
