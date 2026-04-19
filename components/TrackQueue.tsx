@@ -23,16 +23,17 @@ const QueueRow = memo(function QueueRow({ track, index }: { track: Track; index:
   const isActive = currentTrack?.id === track.id;
 
   const playSong = useCallback(() => {
+    console.log("CLICK WORKING: Queue Row Item", track.title);
     if (isActive) {
       broadcastEvent(roomCode, { type: isPlaying ? 'pause' : 'play' });
     } else {
       broadcastEvent(roomCode, { type: 'song', trackId: track.id, position: 0 });
     }
-  }, [isActive, isPlaying, roomCode, track.id]);
+  }, [isActive, isPlaying, roomCode, track.id, track.title]);
 
   return (
     <div 
-      className={`hardware-accelerated flex items-center gap-4 py-2 px-3 rounded-xl cursor-pointer group transition-all duration-300 ${isActive ? 'glass-panel border-purple-500/40 bg-purple-900/40' : 'hover:bg-white/5 border border-transparent'}`}
+      className={`hardware-accelerated flex items-center gap-4 py-2 px-3 rounded-xl cursor-pointer group transition-all duration-300 z-10 pointer-events-auto ${isActive ? 'glass-panel border-purple-500/40 bg-purple-900/40' : 'hover:bg-white/5 border border-transparent'}`}
       onClick={playSong}
     >
       <div className="w-8 flex items-center justify-center shrink-0">

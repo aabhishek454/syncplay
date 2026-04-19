@@ -34,15 +34,16 @@ const Card = memo(function Card({ track }: { track: Track }) {
   const isActive = currentTrack?.id === track.id;
 
   const playSong = useCallback(() => {
+     console.log("CLICK WORKING: Card Grid Item", track.title);
      if (isActive) {
         broadcastEvent(roomCode, { type: isPlaying ? 'pause' : 'play' });
      } else {
         broadcastEvent(roomCode, { type: 'song', trackId: track.id, position: 0 });
      }
-  }, [isActive, isPlaying, roomCode, track.id]);
+  }, [isActive, isPlaying, roomCode, track.id, track.title]);
 
   return (
-    <div className="hardware-accelerated flex flex-col gap-3 group cursor-pointer p-3 rounded-2xl hover:bg-white/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1" onClick={playSong}>
+    <div className="hardware-accelerated flex flex-col gap-3 group cursor-pointer p-3 rounded-2xl hover:bg-white/5 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 z-10 pointer-events-auto" onClick={playSong}>
       <div className={`relative w-full aspect-square rounded-xl overflow-hidden shadow-lg ${isActive ? 'ring-2 ring-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.4)]' : 'ring-1 ring-white/10'}`}>
         
         <Image 

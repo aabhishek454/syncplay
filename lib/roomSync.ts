@@ -284,9 +284,18 @@ function startHeartbeat() {
 
 // User-Facing API for UI triggers (Auto-wraps into Event)
 export function broadcastEvent(roomCode: string, payload: Partial<SyncPayload>) {
-  if (!roomCode || actionLock) return;
+  if (!roomCode ) return;
+  if (actionLock) {
+    console.log("ACTION BLOCKED: Debounce active", payload.type);
+    return;
+  }
+  
+  console.log("ACTION TRIGGERED:", payload.type, payload);
   actionLock = true;
-  setTimeout(() => actionLock = false, 300); // 300ms debounce per user instructions
+  setTimeout(() => {
+    actionLock = false;
+    console.log("ACTION LOCK RELEASED");
+  }, 500); 
   
   const store = usePlayerStore.getState();
   

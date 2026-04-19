@@ -4,13 +4,17 @@ import { usePlayerStore } from '@/store/playerStore';
 import { sendEvent } from '@/lib/roomSync';
 import { FaHeart, FaMusic } from 'react-icons/fa';
 
-export default function TopBar() {
+export default function TopBar({ onSearch }: { onSearch?: (query: string) => void }) {
   const { roomCode, identity, partnerOnline, latency, isResyncing, setResyncing, controlMode, setControlMode } = usePlayerStore();
   const [query, setQuery] = useState('');
 
   const isHost = identity === 'host';
   const youName = isHost ? 'Abhishek' : 'Radhika';
   const partnerName = isHost ? 'Radhika' : 'Abhishek';
+
+  useEffect(() => {
+    if (onSearch) onSearch(query);
+  }, [query, onSearch]);
 
   const handleManualResync = () => {
     if (isResyncing) return;
@@ -26,7 +30,7 @@ export default function TopBar() {
   };
 
   return (
-    <div className="h-[70px] bg-[#0a0510]/80 backdrop-blur-xl border-b border-purple-900/50 flex items-center justify-between px-6 shrink-0 relative z-50 shadow-[0_10px_30px_rgba(124,58,237,0.1)]">
+    <div className="h-[70px] bg-[#0a0510]/80 backdrop-blur-xl border-b border-purple-900/50 flex items-center justify-between px-6 shrink-0 relative z-50 shadow-[0_10px_30px_rgba(124,58,237,0.1)] pointer-events-auto">
       
       {/* Floating Hearts Background (CSS implemented natively via pseudo elements or background pattern) */}
       <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mixing-screen mix-blend-screen"></div>
@@ -42,6 +46,20 @@ export default function TopBar() {
              <FaMusic className="text-[10px]" /> Listening Together
            </span>
         </div>
+      </div>
+
+      {/* CENTER-LEFT: Search Bar */}
+      <div className="hidden md:flex ml-4 flex-1 max-w-[250px] relative z-10">
+         <div className="flex w-full bg-purple-900/20 border border-purple-500/30 rounded-full items-center px-4 py-1.5 focus-within:border-pink-500/50 transition-colors">
+            <svg className="w-3.5 h-3.5 text-purple-300 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <input 
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search songs..."
+              className="bg-transparent border-none outline-none text-white text-xs placeholder-purple-300/50 w-full"
+            />
+         </div>
       </div>
 
       {/* CENTER: Mode Toggle */}

@@ -1,6 +1,7 @@
 'use client';
 import { usePlayerStore } from '@/store/playerStore';
 import { broadcastEvent } from '@/lib/roomSync';
+import { TRACK_LIST } from '@/lib/tracks';
 import { FaPlay, FaPause, FaStepBackward, FaStepForward, FaRandom, FaRedo, FaHeart, FaVolumeUp, FaListUl } from 'react-icons/fa';
 
 export default function PlayerBar() {
@@ -21,6 +22,22 @@ export default function PlayerBar() {
     setVolume(Number(e.target.value));
   };
 
+  const currentIndex = track ? TRACK_LIST.findIndex(t => t.id === track.id) : -1;
+
+  const playNext = () => {
+     if (currentIndex === -1) return;
+     const nextSong = TRACK_LIST[(currentIndex + 1) % TRACK_LIST.length];
+     broadcastEvent(roomCode, { type: 'song', trackId: nextSong.id, position: 0 });
+     console.log("CLICK WORKING: playNext");
+  };
+
+  const playPrev = () => {
+     if (currentIndex === -1) return;
+     const prevSong = TRACK_LIST[(currentIndex - 1 + TRACK_LIST.length) % TRACK_LIST.length];
+     broadcastEvent(roomCode, { type: 'song', trackId: prevSong.id, position: 0 });
+     console.log("CLICK WORKING: playPrev");
+  };
+
   // Convert duration like "3:22" to seconds for the progress max
   const parseDuration = (dur: string) => {
     if (!dur) return 100;
@@ -36,7 +53,7 @@ export default function PlayerBar() {
   };
 
   return (
-    <div className="h-[84px] bg-ytBlack border-t border-ytBorder sticky flex flex-col md:flex-row items-center justify-between px-4 shrink-0 bottom-0 select-none z-50 overflow-hidden w-full">
+    <div className="h-[84px] bg-ytBlack border-t border-ytBorder sticky flex flex-col md:flex-row items-center justify-between px-4 shrink-0 bottom-0 select-none z-50 overflow-hidden w-full pointer-events-auto">
        
        {/* Left: Album/Info */}
        <div className="md:w-[250px] w-full flex items-center justify-between md:justify-start gap-4 h-full hidden md:flex shrink-0">
@@ -56,13 +73,13 @@ export default function PlayerBar() {
 
        {/* Center: Controls */}
        <div className="flex flex-col items-center flex-1 max-w-[700px] w-full h-full justify-center md:px-8">
-          <div className="flex items-center gap-6 mb-1">
+           <div className="flex items-center gap-6 mb-1">
              <FaRandom className="text-gray-400 hover:text-white cursor-pointer text-sm" />
-             <FaStepBackward className="text-gray-200 hover:text-white cursor-pointer text-lg" />
+             <FaStepBackward onClick={playPrev} className="text-gray-200 hover:text-white cursor-pointer text-lg" />
              <div onClick={togglePlay} className="w-10 h-10 bg-white rounded-full flex items-center justify-center cursor-pointer hover:scale-105 transition-transform shrink-0">
                 {isPlaying ? <FaPause className="text-black text-sm" /> : <FaPlay className="text-black text-sm ml-1" />}
              </div>
-             <FaStepForward className="text-gray-200 hover:text-white cursor-pointer text-lg" />
+             <FaStepForward onClick={playNext} className="text-gray-200 hover:text-white cursor-pointer text-lg" />
              <FaRedo className="text-gray-400 hover:text-white cursor-pointer text-sm" />
           </div>
 

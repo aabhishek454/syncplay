@@ -71,14 +71,14 @@ export default function RoomPage() {
       <div className="absolute top-0 left-0 w-full h-[50vh] bg-gradient-to-b from-purple-900/30 to-transparent pointer-events-none -z-10"></div>
       <div className="absolute top-1/4 -right-32 w-96 h-96 bg-pink-600/10 blur-[100px] rounded-full pointer-events-none -z-10"></div>
 
-      <TopBar />
+      <TopBar onSearch={setSearchQuery} />
 
       <div className="flex flex-1 overflow-hidden relative">
         <div className="hidden md:flex">
           <Sidebar />
         </div>
         
-        <main className="flex-1 flex flex-col overflow-y-auto w-full pt-4 custom-scrollbar pb-36 px-4 md:px-0">
+        <main className="flex-1 flex flex-col overflow-y-auto w-full pt-4 custom-scrollbar pb-36 px-4 md:px-0 relative z-10 pointer-events-auto">
            
            <div className="flex-1 w-full max-w-5xl mx-auto">
               {/* Header Info */}
